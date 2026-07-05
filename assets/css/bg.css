@@ -1,0 +1,55 @@
+.bg-baru{
+    background-color: #213555;
+}
+#nav-baru{
+    color: white;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+}
+.bg-foot{
+    background-color: #213555;    
+}
+picture {
+    vertical-align: middle;
+    border-style: none;
+    max-width: 400px;
+}
+img.w-300{
+    width: 175px;
+}
+.bg-white{
+    background-color: white;
+}
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    background-color: #213555;
+    color: white;
+    
+    border: none;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #213555;
+    min-width: 160px;
+}
+.dropdown-content a {
+    color: #6c757d;
+    padding: 10px 10px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #fff;
+    color: #213555;
+}
+
+.dropdown:hover .dropbtn {
+    background-color: #fff;
+}
