@@ -19,11 +19,13 @@ function tambahTransaksi($post)
         return false;
     }
 
-    // Generate ID pesan yang lebih unik
-    $id_pesan = uniqid('TRX_', true) . '_' . rand(1000, 9999);
+    // id_pesan adalah PRIMARY KEY bertipe INT di tabel transaksi, TAPI BUKAN auto_increment
+    // (kolom auto_increment terpisah adalah `id`). Jadi id_pesan harus digenerate manual,
+    // harus muat di rentang INT (maks 2147483647), dan harus unik.
+    // Kalau kebetulan tabrakan (sangat jarang), akan di-retry beberapa kali.
 
     $id_user = $_SESSION['iduser'];
-    
+
     // Validasi dan sanitasi input
     $pengirim = "Techvibe";
     $penerima = mysqli_real_escape_string($konek, trim($post['penerima']));
@@ -48,40 +50,69 @@ function tambahTransaksi($post)
         return false;
     }
 
+    // Ambil cart SEKALI di awal, dipakai konsisten sepanjang fungsi
+    $carts = ambilCart()['carts'];
+
+    if (empty($carts)) {
+        $_SESSION['error'] = "Keranjang kosong, tidak ada yang bisa diproses";
+        return false;
+    }
+
     // Mulai transaction
     mysqli_begin_transaction($konek);
 
     try {
-        // Insert transaksi utama
-        $queryTransaksi = "INSERT INTO transaksi (id_pesan, id_user, pengirim, penerima, alamat, telepon, email, kuantiti_total, total_akhir, pembayaran, id_status, pesan_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = mysqli_prepare($konek, $queryTransaksi);
-        mysqli_stmt_bind_param($stmt, 'sisssssidiss', $id_pesan, $id_user, $pengirim, $penerima, $alamat, $telepon, $email, $kuantiti_total, $total_akhir, $pembayaran, $id_status, $pesan);
-        
-        if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception("Gagal menyimpan transaksi: " . mysqli_error($konek));
-        }
-        mysqli_stmt_close($stmt);
+        // Insert transaksi utama, dengan retry jika id_pesan kebetulan sudah dipakai (duplicate PK)
+        $maxRetry = 5;
+        $inserted = false;
 
-        // Proses detail transaksi, penjualan, dan update stok dalam satu loop
-        $carts = ambilCart()['carts'];
-        $i = 1;
-        
+        for ($attempt = 0; $attempt < $maxRetry; $attempt++) {
+            // Angka acak 9 digit (100000000 - 999999999), aman di dalam rentang INT
+            $id_pesan = random_int(100000000, 999999999);
+
+            $queryTransaksi = "INSERT INTO transaksi (id_pesan, id_user, pengirim, penerima, alamat, telepon, email, kuantiti_total, total_akhir, pembayaran, id_status, pesan_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = mysqli_prepare($konek, $queryTransaksi);
+            mysqli_stmt_bind_param($stmt, 'iisssssidiis', $id_pesan, $id_user, $pengirim, $penerima, $alamat, $telepon, $email, $kuantiti_total, $total_akhir, $pembayaran, $id_status, $pesan);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $inserted = true;
+                mysqli_stmt_close($stmt);
+                break;
+            }
+
+            // Kalau errornya BUKAN duplicate key (error code 1062), langsung gagalkan
+            if (mysqli_errno($konek) !== 1062) {
+                mysqli_stmt_close($stmt);
+                throw new Exception("Gagal menyimpan transaksi: " . mysqli_error($konek));
+            }
+
+            mysqli_stmt_close($stmt);
+            // kalau duplicate, loop akan generate id_pesan baru dan coba lagi
+        }
+
+        if (!$inserted) {
+            throw new Exception("Gagal menyimpan transaksi: tidak bisa membuat id_pesan unik, coba lagi");
+        }
+
+        // Proses detail transaksi, penjualan, dan update stok
+        // Dicocokkan berdasarkan id_produk dari cart itu sendiri (BUKAN index urutan form),
+        // supaya tidak ada risiko salah pasang kuantiti/produk kalau cart berubah antara
+        // load halaman checkout dan submit form.
         foreach ($carts as $value) {
-            $kuantiti = intval($post['kuantiti' . $i]);
-            $id_produk = intval($post['id_produk' . $i]);
-            $total = floatval($value->total);
-            $i++;
+            $id_produk = intval($value->id_produk);
+            $kuantiti  = intval($value->kuantiti);
+            $total     = floatval($value->total);
 
             // Validasi data produk
             if ($kuantiti <= 0 || $id_produk <= 0) {
-                throw new Exception("Data produk tidak valid");
+                throw new Exception("Data produk tidak valid untuk id_produk: " . $id_produk);
             }
 
             // Insert detail transaksi
             $queryDetail = "INSERT INTO transaksi_detail (id_pesan, id_produk, kuantiti, total) VALUES (?, ?, ?, ?)";
             $stmtDetail = mysqli_prepare($konek, $queryDetail);
-            mysqli_stmt_bind_param($stmtDetail, 'siid', $id_pesan, $id_produk, $kuantiti, $total);
-            
+            mysqli_stmt_bind_param($stmtDetail, 'iiid', $id_pesan, $id_produk, $kuantiti, $total);
+
             if (!mysqli_stmt_execute($stmtDetail)) {
                 throw new Exception("Gagal menyimpan detail transaksi: " . mysqli_error($konek));
             }
@@ -91,21 +122,21 @@ function tambahTransaksi($post)
             $queryJual = "INSERT INTO penjualan (id_produk, jual) VALUES (?, ?) ON DUPLICATE KEY UPDATE jual = jual + ?";
             $stmtJual = mysqli_prepare($konek, $queryJual);
             mysqli_stmt_bind_param($stmtJual, 'iii', $id_produk, $kuantiti, $kuantiti);
-            
+
             if (!mysqli_stmt_execute($stmtJual)) {
                 throw new Exception("Gagal update penjualan: " . mysqli_error($konek));
             }
             mysqli_stmt_close($stmtJual);
 
-            // Update stok produk
+            // Update stok produk (hanya berhasil kalau stok mencukupi)
             $queryStok = "UPDATE produk SET stok = stok - ? WHERE id_produk = ? AND stok >= ?";
             $stmtStok = mysqli_prepare($konek, $queryStok);
             mysqli_stmt_bind_param($stmtStok, 'iii', $kuantiti, $id_produk, $kuantiti);
-            
+
             if (!mysqli_stmt_execute($stmtStok)) {
-                throw new Exception("Stok produk tidak mencukupi atau produk tidak ditemukan");
+                throw new Exception("Gagal update stok produk id: " . $id_produk);
             }
-            
+
             if (mysqli_affected_rows($konek) === 0) {
                 throw new Exception("Stok produk tidak mencukupi untuk ID produk: " . $id_produk);
             }
@@ -114,10 +145,10 @@ function tambahTransaksi($post)
 
         // Commit transaction
         mysqli_commit($konek);
-        
+
         // Bersihkan cart setelah transaksi berhasil
         bersihkanCart();
-        
+
         $_SESSION['sukses'] = "Transaksi berhasil. Silahkan melakukan Pembayaran";
         return true;
 
@@ -142,14 +173,14 @@ function ambilTransaksi()
     $stmt = mysqli_prepare($konek, $query);
     mysqli_stmt_bind_param($stmt, 'i', $id_user);
     mysqli_stmt_execute($stmt);
-    
+
     $result = mysqli_stmt_get_result($stmt);
     $trans = [];
-    
+
     while ($tran = mysqli_fetch_object($result)) {
         $trans[] = $tran;
     }
-    
+
     mysqli_stmt_close($stmt);
 
     return ['trans' => $trans];
@@ -158,24 +189,24 @@ function ambilTransaksi()
 function transaksiDetail($id)
 {
     global $konek;
-    
+
     if (!isset($id) || empty($id)) {
         return ['detail' => []];
     }
 
-    $id_pesan = mysqli_real_escape_string($konek, $id);
+    $id_pesan = intval($id);
     $query = "SELECT * FROM transaksi_detail JOIN produk ON produk.id_produk = transaksi_detail.id_produk WHERE id_pesan = ?";
     $stmt = mysqli_prepare($konek, $query);
-    mysqli_stmt_bind_param($stmt, 's', $id_pesan);
+    mysqli_stmt_bind_param($stmt, 'i', $id_pesan);
     mysqli_stmt_execute($stmt);
-    
+
     $result = mysqli_stmt_get_result($stmt);
     $detail = [];
-    
+
     while ($tran = mysqli_fetch_object($result)) {
         $detail[] = $tran;
     }
-    
+
     mysqli_stmt_close($stmt);
 
     return ['detail' => $detail];
@@ -199,7 +230,7 @@ function bayar($post)
 
     $img = $_FILES['gambar'];
     $allowed_types = ['image/jpg', 'image/jpeg', 'image/png'];
-    
+
     if (!in_array($img['type'], $allowed_types)) {
         $_SESSION['pesan'] = 'Pilih gambar dengan ekstensi JPG, JPEG, PNG!!';
         return false;
@@ -223,14 +254,15 @@ function bayar($post)
 
     // Sanitasi input
     $nama = mysqli_real_escape_string($konek, trim($post['nama']));
-    $id_pesan = mysqli_real_escape_string($konek, trim($post['idpesan']));
+    $id_pesan_str = mysqli_real_escape_string($konek, trim($post['idpesan'])); // untuk insert ke pembayaran (varchar)
+    $id_pesan_int = intval(trim($post['idpesan']));                            // untuk update ke transaksi (int)
     $nominal = floatval($post['nominal']);
 
-    // Insert pembayaran
+    // Insert pembayaran (kolom id_pesan di tabel ini bertipe VARCHAR)
     $queryPembayaran = "INSERT INTO pembayaran (id_pesan, nama, nominal, gambar) VALUES (?, ?, ?, ?)";
     $stmt = mysqli_prepare($konek, $queryPembayaran);
-    mysqli_stmt_bind_param($stmt, 'ssds', $id_pesan, $nama, $nominal, $imgname);
-    
+    mysqli_stmt_bind_param($stmt, 'ssds', $id_pesan_str, $nama, $nominal, $imgname);
+
     if (!mysqli_stmt_execute($stmt)) {
         unlink($upload_dir . $imgname); // Hapus file jika gagal
         $_SESSION['pesan'] = 'Gagal menyimpan data pembayaran';
@@ -241,8 +273,8 @@ function bayar($post)
     // Update status pembayaran
     $queryUpdate = "UPDATE transaksi SET pembayaran = 1 WHERE id_pesan = ?";
     $stmtUpdate = mysqli_prepare($konek, $queryUpdate);
-    mysqli_stmt_bind_param($stmtUpdate, 's', $id_pesan);
-    
+    mysqli_stmt_bind_param($stmtUpdate, 'i', $id_pesan_int);
+
     if (!mysqli_stmt_execute($stmtUpdate)) {
         $_SESSION['pesan'] = 'Gagal update status pembayaran';
         return false;
@@ -256,18 +288,18 @@ function bayar($post)
 function terimaTransaksi($id)
 {
     global $konek;
-    
+
     if (!isset($id['idpesan']) || empty($id['idpesan'])) {
         $_SESSION['error'] = 'ID transaksi tidak valid';
         return false;
     }
 
-    $id_pesan = mysqli_real_escape_string($konek, $id['idpesan']);
-    
+    $id_pesan = intval($id['idpesan']);
+
     $query = "UPDATE transaksi SET id_status = 3 WHERE id_pesan = ?";
     $stmt = mysqli_prepare($konek, $query);
-    mysqli_stmt_bind_param($stmt, 's', $id_pesan);
-    
+    mysqli_stmt_bind_param($stmt, 'i', $id_pesan);
+
     if (mysqli_stmt_execute($stmt)) {
         $_SESSION['sukses'] = 'Transaksi berhasil diterima';
         mysqli_stmt_close($stmt);

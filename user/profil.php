@@ -47,7 +47,7 @@ require 'templates/header.php';
             <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab">
                 <ul class="list-group list-group-flush w-50">
                     <li class="list-group-item">
-                        <img src="<? url ?>assets/images/user/<?= $user->image ?>" alt="">
+                        <img src="<?= url ?>assets/images/user/<?= $user->image ?>" alt="">
                     </li>
                     <li class="list-group-item">
                         <h6 class="font-weight-bold">Nama</h6><?= $user->nama ?>
@@ -80,39 +80,46 @@ require 'templates/header.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($cart as $key => $value) : ?>
+                        <?php foreach ($cart as $key => $value) :
+                            $formId = 'formCart' . $value->id_cart;
+                        ?>
                             <tr>
                                 <th scope="row"><?= $key + 1 ?></th>
                                 <td><img style="width: 100%" src="<?= url ?>assets/images/produk/<?= $value->gambar ?>" alt=""></td>
                                 <td><a href="<?= url ?>user/produk.php/?id=<?= $value->id_produk ?>"><?= $value->nama ?></a></td>
                                 <td>Rp<?= number_format($value->harga, 0) ?></td>
-
-                                <form action="" method="POST">
-                                    <td>
-                                        <input class="form-control w-100" min="1" max="50" type="number" name="kuantiti" value="<?= $value->kuantiti ?>">
-                                    </td>
-                                    <td>Rp<?= number_format($value->total, 0) ?></td>
-                                    <td>
-                                        <input type="hidden" name="idCart" value="<?= $value->id_cart ?>">
-                                        <input type="hidden" name="harga" value="<?= $value->harga ?>">
-                                        <button name="hapusCart" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
-                                        <button name="ubahCart" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
-                                    </td>
-                                </form>
-
+                                <td>
+                                    <input class="form-control w-100" min="1" max="50" type="number" name="kuantiti"
+                                           form="<?= $formId ?>" value="<?= $value->kuantiti ?>">
+                                </td>
+                                <td>Rp<?= number_format($value->total, 0) ?></td>
+                                <td>
+                                    <input type="hidden" name="idCart" form="<?= $formId ?>" value="<?= $value->id_cart ?>">
+                                    <input type="hidden" name="harga" form="<?= $formId ?>" value="<?= $value->harga ?>">
+                                    <button name="hapusCart" form="<?= $formId ?>" class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button>
+                                    <button name="ubahCart" form="<?= $formId ?>" class="btn btn-sm btn-primary"><i class="fa fa-edit"></i></button>
+                                </td>
+                            </tr>
+                            <!-- form diletakkan terpisah di luar struktur tabel, dihubungkan lewat atribut form="" -->
+                            <tr style="display:none">
+                                <td colspan="7" style="padding:0; border:0;">
+                                    <form id="<?= $formId ?>" action="" method="POST"></form>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                     <tfoot>
                         <tr>
                             <td>Total :</td>
-                            <td> Rp<?= number_format($subtotal, 0) ?> </td>
+                            <td colspan="6"> Rp<?= number_format($subtotal, 0) ?> </td>
                         </tr>
                         <tr>
-                            <form action="" method="POST">
-                                <td><button name="bersihkanCart" class="btn btn-sm btn-success">Bersihkan isi keranjang</button></td>
-                            </form>
-                            <td><a class="btn btn-sm btn-success" href="<?= url ?>user/cekOut.php">Cekout</a></td>
+                            <td>
+                                <form id="formBersihkan" action="" method="POST">
+                                    <button name="bersihkanCart" class="btn btn-sm btn-success">Bersihkan isi keranjang</button>
+                                </form>
+                            </td>
+                            <td colspan="6"><a class="btn btn-sm btn-success" href="<?= url ?>user/cekOut.php">Cekout</a></td>
                         </tr>
                     </tfoot>
                 </table>

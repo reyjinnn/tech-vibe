@@ -13,16 +13,17 @@ function tambahCart($post)
     $kategori = $post['kategori'];
     $total = $harga * $kuantiti;
 
-
-    var_dump($cek = mysqli_query($konek, "SELECT * FROM cart WHERE id_produk='$id_produk'"));
+    $cek = mysqli_query($konek, "SELECT * FROM cart WHERE id_produk='$id_produk' AND id_user='$id_user'");
     $cekKuantiti = mysqli_fetch_assoc($cek);
-    $kuantitiBaru = ($cekKuantiti['kuantiti'] + $kuantiti);
+    $kuantitiBaru = ($cekKuantiti['kuantiti'] ?? 0) + $kuantiti;
+
     if (mysqli_num_rows($cek) === 0) {
         mysqli_query($konek, "INSERT INTO cart (id_user, id_produk, nama, harga, kuantiti, gambar, kategori, total)  VALUES(
             '$id_user', '$id_produk', '$nama', '$harga', '$kuantiti', '$gambar', '$kategori', '$total'
             )");
     } else if (mysqli_num_rows($cek) > 0) {
-        mysqli_query($konek, "UPDATE cart SET kuantiti='$kuantitiBaru' WHERE id_produk='$id_produk'");
+        $totalBaru = $harga * $kuantitiBaru;
+        mysqli_query($konek, "UPDATE cart SET kuantiti='$kuantitiBaru', total='$totalBaru' WHERE id_produk='$id_produk' AND id_user='$id_user'");
     }
     $_SESSION['sukses'] = "Barang berhasil ditambahkan keranjang";
     return;
@@ -35,8 +36,8 @@ function ambilCart()
     $id = $_SESSION['iduser'];
     $carts = [];
     $produk = mysqli_query($konek, "SELECT * FROM cart WHERE id_user='$id'");
-    $subtotal = mysqli_query($konek, "SELECT SUM(total) as subtotal FROM cart WHERE id_user='$id'");
-    $kuantiti = mysqli_query($konek, "SELECT SUM(kuantiti) as kuantiti FROM cart WHERE id_user='$id'");
+    $subtotal = mysqli_query($konek, "SELECT COALESCE(SUM(total), 0) as subtotal FROM cart WHERE id_user='$id'");
+    $kuantiti = mysqli_query($konek, "SELECT COALESCE(SUM(kuantiti), 0) as kuantiti FROM cart WHERE id_user='$id'");
 
     while ($hasil = mysqli_fetch_object($produk)) {
         $carts[] = $hasil;
