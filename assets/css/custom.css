@@ -7,6 +7,39 @@
 Front End
 ---- */
 
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* wrapper konten utama supaya footer terdorong ke bawah */
+.container.bg-white.p-5 {
+  flex: 1 0 auto;
+}
+
+footer {
+  flex-shrink: 0;
+}
+
+footer .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+footer .col-sm {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
 .navbar-toggler {
   border: none;
   cursor: pointer;
@@ -118,36 +151,102 @@ Back End
 
 @media (max-width: 970.98px) {
   /* ---- 
-Untuk Mobile
-Front End
----- */
-  * {
-    font-size: 12px;
+  Untuk Mobile
+  Front End
+  ---- */
+  body {
+    font-size: 14px;
   }
+
   #icon:hover {
     color: #007bff;
   }
   .navbar {
-    text-align: center;
+    text-align: left;
   }
+
+  #nav-btn {
+    margin-left: auto;
+    padding: 8px 12px;
+  }
+
+  .navbar > .container,
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .navbar-collapse {
+    background-color: #1e2a4a;
+    padding: 15px 20px;
+    border-radius: 0 0 8px 8px;
+  }
+
   .nav-item > .nav-link:hover {
-    background-color: #f8f9fa;
+    background-color: rgba(255,255,255,0.1);
   }
+
   .navbar-nav li:last-child {
     display: block;
   }
-  .navbar .collapse .cari {
-    display: none;
+
+  .nav-baru {
+    width: 100%;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
   }
+
+  .nav-baru .nav-link {
+    color: #fff !important;
+    padding: 12px 5px;
+    font-size: 15px;
+  }
+
+  /* Dropdown Kategori */
+  .dropdown-content {
+    position: static !important;
+    display: none;
+    background-color: rgba(255,255,255,0.05);
+    box-shadow: none;
+    padding-left: 15px;
+    width: 100%;
+  }
+
+  .dropdown-content a {
+    color: #ddd !important;
+    padding: 8px 0;
+    display: block;
+    font-size: 14px;
+  }
+
+  .dropbtn {
+    color: #fff !important;
+  }
+
+  /* Search box y*/
+  .navbar .collapse .cari {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+  }
+  .cari form {
+    width: 100%;
+    display: flex;
+  }
+  .cari input {
+    flex: 1;
+  }
+
   .content {
     display: block;
     width: 96%;
     margin-left: 50px;
     transition: all ease-in-out 600ms;
   }
+
   /* ---- 
-Back End
----- */
+  Back End
+  ---- */
   .sidebar {
     display: block;
     position: absolute;

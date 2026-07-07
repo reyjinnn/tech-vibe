@@ -56,8 +56,8 @@ if (isset($_POST['masuk'])) {
     <?php endif; ?>
 
     <nav class="navbar navbar-expand-lg shadow-sm">
-        <div id="nav-btn" class="navbar-toggler m-auto" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false">
-            <i id="icon" class="fa fa-bars"></i>
+        <div id="nav-btn" class="navbar-toggler" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false">
+                <i id="icon" class="fa fa-bars"></i>
         </div>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav col-6">

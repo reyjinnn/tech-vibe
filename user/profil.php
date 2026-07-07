@@ -26,6 +26,7 @@ if (isset($_POST['terima'])) {
     terimaTransaksi($_POST);
 }
 
+
 require 'templates/header.php';
 ?>
 <div class="row border mt-5 py-3">
@@ -119,7 +120,7 @@ require 'templates/header.php';
                                     <button name="bersihkanCart" class="btn btn-sm btn-success">Bersihkan isi keranjang</button>
                                 </form>
                             </td>
-                            <td colspan="6"><a class="btn btn-sm btn-success" href="<?= url ?>user/cekOut.php">Cekout</a></td>
+                            <td colspan="6"><a class="btn btn-sm btn-success" id="btnCekout" href="<?= url ?>user/cekOut.php">Cekout</a></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -177,3 +178,19 @@ require 'templates/header.php';
     </div>
 </div>
 <?php require 'templates/footer.php' ?>
+
+<script>
+    $(document).on('click', '#btnCekout', function (e) {
+        if (jumlahItem <= 0) {
+            e.preventDefault();      // <- ini yang mencegah pindah ke cekOut.php
+            e.stopPropagation();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops...',
+                text: 'Keranjang gaboleh kosong'
+            });
+            // tidak ada redirect apapun -> otomatis tetap di profil.php
+        }
+        // kalau jumlahItem > 0, tidak masuk if, klik jalan normal -> lanjut ke href (cekOut.php)
+    });
+</script>

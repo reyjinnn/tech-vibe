@@ -115,10 +115,24 @@ require 'templates/header.php';
 
             <button type="submit" name="submit" class="btn btn-primary" <?= empty($carts) ? 'disabled' : '' ?>>Submit</button>
         </form>
-
     </div>
 </div>
 
 <?php
 require 'templates/footer.php';
 ?>
+
+<?php if (empty($carts)) : ?>
+<script>
+    $(document).ready(function () {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Oops...',
+            text: 'Keranjang gaboleh kosong',
+            confirmButtonText: 'Belanja Sekarang'
+        }).then(function () {
+            window.location.href = '<?= url ?>user/index.php';
+        });
+    });
+</script>
+<?php endif; ?>

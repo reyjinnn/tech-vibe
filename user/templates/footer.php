@@ -1,47 +1,46 @@
 </div>
+</div>
 
 <footer>
-    <div style="max-width: 100%; text-align:center;" class="footer bg-foot text-light">
-        <div class="row px-5 py-3">
-            <div class="col-sm ">
-                <ul>
-                <h4>Kategori</h4>
+    <div style="max-width: 100%; text-align:center;" class="footer bg-baru text-light">
+        <div class="row px-5 py-4 mx-0">
+            <div class="col-sm">
+                <h4 style="font-family: 'Zen Dots', cursive; color: blueviolet; font-size: 18px;">Kategori</h4>
                 <p class="foot-item ml-3">
                     <a href="<?= url ?>user/produk.php/?kategori=ponsel">Ponsel</a><br>
                     <a href="<?= url ?>user/produk.php/?kategori=laptop">Laptop</a><br>
                     <a href="<?= url ?>user/produk.php/?kategori=komputer">Komputer</a><br>
                 </p>
-                </ul>
             </div>
-            <div class="col-sm ">
-                <h4>Halaman</h4>
+            <div class="col-sm">
+                <h4 style="font-family: 'Zen Dots', cursive; color: blueviolet; font-size: 18px;">Halaman</h4>
                 <p class="foot-item ml-3">
                     <a href="<?= url ?>user">Beranda</a><br>
                     <a href="<?= url ?>user/tentang.php">Tentang</a><br>
                     <a href="<?= url ?>user/kontak.php">Kontak</a><br>
                 </p>
             </div>
-            <div class="col-sm ">
-                <h4>Otentikasi</h4>
+            <div class="col-sm">
+                <h4 style="font-family: 'Zen Dots', cursive; color: blueviolet; font-size: 18px;">Otentikasi</h4>
                 <p class="foot-item ml-3">
-                    <a class="text-white" style="cursor: pointer" data-toggle="modal" data-target="#masuk">Masuk</a><br>
+                    <a style="cursor: pointer" data-toggle="modal" data-target="#masuk">Masuk</a><br>
                     <a href="<?= url ?>user/daftar.php">Register</a><br>
                 </p>
             </div>
-            <div class="col-sm ">
-                <h4 class="follow">Ikuti Kami</h4>
+            <div class="col-sm">
+                <h4 class="follow" style="font-family: 'Zen Dots', cursive; color: blueviolet; font-size: 18px;">Ikuti Kami</h4>
                 <p class="foot-item ml-3">
-                    <a href="http://www.facebook.com"><i class="fa fa-facebook mr-2"></i> Facebook</a><br>
+                    <a href="http://www.facebook.com"><i class="fa fa-facebook mr-2"></i>Facebook</a><br>
                     <a href="http://www.instagram.com"><i class="fa fa-instagram mr-2"></i>Instagram</a><br>
                     <a href="http://www.youtube.com"><i class="fa fa-youtube mr-2"></i>Youtube</a><br>
                 </p>
             </div>
         </div>
-        <div style="margin-bottom : 0; " class="row justify-content-center">
-            <div class="text-center w-100 py-3 bg-secondary">
-                <span class="text-light ">&copy CopyRight | <?= author . " (" . date('Y') . ")" ?></span>
+        <div style="margin-bottom: 0;" class="row justify-content-center mx-0">
+            <div class="text-center w-100 py-3" style="background-color: rgba(0,0,0,0.15);">
+                <span class="text-light">&copy; CopyRight | <?= author . " (" . date('Y') . ")" ?></span>
             </div>
-        </div>
+        </div>
     </div>
 </footer>
 
@@ -99,11 +98,11 @@
                                 </div>
                             <div class="form-group">
                                 <label for="nama">Nama</label>
-                                <input class="form-control" type="text" name="nama" id="nama">
+                                <input class="form-control" type="text" name="nama" id="nama" value="<?= $trans->penerima ?>" readonly>
                             </div>
                             <div class="form-group">
                                 <label for="nominal">Nominal</label>
-                                <input class="form-control" type="number" name="nominal" id="nominal">
+                                <input class="form-control" type="number" name="nominal" id="nominal value" value="<?= $trans->total_akhir ?>" readonly>
                             </div>
                             <div class="form-group">
                                 <label for="gambar">Unggah bukti pembayaran</label>
@@ -177,7 +176,6 @@
 <script src="<?= url ?>assets/js/pooper.js" crossorigin="anonymous"></script>
 <script src="<?= url ?>assets/js/bootstrap.min.js" crossorigin="anonymous"></script>
 <script src="<?= url ?>assets/js/sweetalert2.all.js" crossorigin="anonymous"></script>
-<!-- Custom Javascript -->
-<script src="<?= url ?>assets/js/custom.js" crossorigin="anonymous"></script><!--
+<script src="<?= url ?>assets/js/custom.js" crossorigin="anonymous"></script>
 </body>
 </html>
